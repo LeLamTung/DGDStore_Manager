@@ -1,53 +1,76 @@
 import React from "react";
 import { Card, Alert, Button } from "react-bootstrap";
-import { NavLink, Link } from "react-router-dom";
+import { NavLink, Link, useNavigate } from "react-router-dom";
 import Breadcrumb from "../../../layouts/AdminLayout/Breadcrumb";
 import { CopyToClipboard } from "react-copy-to-clipboard";
 import AuthLogin from "./JWTLogin"; // Đã tích hợp login
 import { GoogleLogin } from "@react-oauth/google";
 import axios from "axios";
+const API_URL = import.meta.env.VITE_APP_API_URL || "http://localhost:5000";
 
-
-
-const handleSucces = async (credentialResponse) => {
-  try {
-    const result = await axios.post(
-      `http://localhost:5000/api/admin/auth/login-google`,
-      {
-        gg_token: credentialResponse.credential,
-      },
-      {
-        headers: {
-          "Content-Type": "application/json",
-        },
-        withCredentials: true,
-      }
-    );
-
-    const { user } = result.data;
-    if (!user || !user.Role?.NameRole) {
-      alert("Không thể xác định role");
-      return;
-    }
-    if (user.IsActive === false) {
-      alert("Tài khoản đã bị khóa.");
-      return;
-    }
-    if (user.Role.NameRole === "Admin" || user.Role.NameRole === "Staff") {
-      window.location.href = "http://localhost:3000/dashboard";
-    } else {
-      window.location.href = "http://localhost:3001";
-    }
-
-  } catch (error) {
-    console.error("Google login error:", error);
-    alert("Đăng nhập thất bại");
-  }
-};
-const handleError = () => {
-  alert("Đăng nhập thất bại");
-};
 const Signin1 = () => {
+  const navigate = useNavigate(); // Khởi tạo navigate
+
+  const handleSucces = async (credentialResponse) => {
+    try {
+      const result = await axios.post(
+        `${API_URL}/api/admin/auth/login-google`,
+        {
+          gg_token: credentialResponse.credential,
+        },
+        {
+          headers: { "Content-Type": "application/json" },
+          withCredentials: true,
+        }
+      );
+
+      // --- SỬA ĐOẠN NÀY ---
+      // 1. Phải lấy cả accessToken ra nữa
+      const { user, accessToken, redirect } = result.data;
+      // 2. [QUAN TRỌNG NHẤT] Lưu Token vào LocalStorage
+      // Nếu thiếu dòng này là coi như chưa đăng nhập!
+      localStorage.setItem("accessToken", accessToken);
+      localStorage.setItem("user", JSON.stringify(user));
+
+      // 3. Kiểm tra Role
+      if (!user || !user.Role?.NameRole) {
+        alert("Không thể xác định role");
+        return;
+      }
+      if (user.IsActive === false) {
+        alert("Tài khoản đã bị khóa.");
+        return;
+      }
+
+      // 4. Điều hướng thông minh (Tránh reload trang nếu cùng domain)
+      // Nếu Backend trả về link điều hướng cụ thể
+      if (redirect) {
+        // Nếu redirect URL chứa http (khác domain/port) -> dùng window.location
+        if (redirect.startsWith("http")) {
+          window.location.href = redirect;
+        } else {
+          // Nếu là link nội bộ -> dùng navigate cho mượt (không bị mất state)
+          navigate(redirect);
+        }
+      } else {
+        // Fallback nếu backend không trả link
+        if (user.Role.NameRole === "Admin" || user.Role.NameRole === "Staff") {
+          navigate("/dashboard"); // Dùng navigate thay vì window.location
+        } else {
+          // Nếu nhảy sang trang Customer (port 3001) thì bắt buộc reload
+          window.location.href = "http://localhost:3001";
+        }
+      }
+
+    } catch (error) {
+      console.error("Google login error:", error);
+      alert("Đăng nhập thất bại");
+    }
+  };
+  const handleError = () => {
+    alert("Đăng nhập thất bại");
+  };
+
   return (
     <React.Fragment>
       <Breadcrumb />
@@ -65,7 +88,7 @@ const Signin1 = () => {
                 <i className="feather icon-unlock auth-icon" />
               </div>
               {/* Gọi form login */}
-              <AuthLogin /> 
+              <AuthLogin />
 
               <p className="mb-2 text-muted">
                 Quên mật khẩu?{" "}

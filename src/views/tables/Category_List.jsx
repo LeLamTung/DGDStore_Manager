@@ -80,7 +80,7 @@ const CategoryList = () => {
             {images.split(',').map((img, i) => (
               <img
                 key={i}
-                src={`${API_URL}/uploads/${img.trim()}`}
+                src={`${img.trim()}`}
                 alt={record.CategoryName}
                 style={{
                   width: 100,

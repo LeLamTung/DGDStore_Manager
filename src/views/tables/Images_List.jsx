@@ -70,7 +70,7 @@ const ImageList = () => {
       key: 'ImageLink',
       render: (text) => (
         <img
-          src={`${API_URL}/uploads/${text}`}
+          src={`${text}`}
           alt="Ảnh"
           style={{
             width: 100,

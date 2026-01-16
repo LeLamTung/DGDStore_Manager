@@ -7,7 +7,6 @@ import './index.scss';
 import App from './App';
 import reportWebVitals from './reportWebVitals';
 const client_id = import.meta.env.VITE_APP_GG_CLIENT_ID;
-console.log("Google Client ID:", client_id);
 const container = document.getElementById('root');
 const root = createRoot(container);
 root.render(

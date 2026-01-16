@@ -129,7 +129,7 @@ const ImageEdit = () => {
                 onClick={() => handleSelectImage(img)}
                 style={{ cursor: 'pointer', border: '1px solid gray', padding: '5px' }}
               >
-                <Image src={`${API_URL}/uploads/${img.ImageLink}`} thumbnail width={100} />
+                <Image src={`${img.ImageLink}`} thumbnail width={100} />
                 <div>
                   <strong>{img.Product?.ProductName}</strong>
                 </div>
@@ -153,7 +153,7 @@ const ImageEdit = () => {
                   padding: '5px'
                 }}
               >
-                <Image src={`${API_URL}/uploads/${img.ImageLink}`} thumbnail width={100} />
+                <Image src={`${img.ImageLink}`} thumbnail width={100} />
                 <div>{img.MainImage ? 'Ảnh chính' : 'Ảnh phụ'}</div>
               </div>
             ))}

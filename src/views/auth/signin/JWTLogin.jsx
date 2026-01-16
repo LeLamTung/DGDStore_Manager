@@ -36,18 +36,25 @@ const JWTLogin = () => {
             },
             withCredentials: true,
           });
-        
-          const { user } = res.data;
-        
+        // 1. Lấy dữ liệu từ Backend trả về
+          const { user, accessToken, redirect } = res.data;
+        // 2. Lưu Token và User vào LocalStorage (QUAN TRỌNG NHẤT)
+          localStorage.setItem("accessToken", accessToken);
+          localStorage.setItem("user", JSON.stringify(user));
+
+
           if (!user || !user.Role?.NameRole) {
             setErrors({ submit: "Lỗi xác thực tài khoản hoặc role." });
             return;
           }
         
           if (user.Role.NameRole === "Admin" || user.Role.NameRole === "Staff") {
-            navigate(res.data.redirect || "/");
+            // Nếu là Admin, dùng navigate của React Router để chuyển trang mượt mà
+            // (Giả sử file này đang nằm trong project Admin)
+            navigate(redirect || "/dashboard"); 
           } else {
-            window.location.href = res.data.redirect;
+            // Nếu là Customer, có thể phải nhảy sang trang web khác (port 3001)
+            window.location.href = redirect || "http://localhost:3001";
           }
         
         } catch (err) {

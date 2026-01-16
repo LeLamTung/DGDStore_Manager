@@ -114,7 +114,7 @@ const ProductList = () => {
                           <td>{item.ProductName}</td>
                           <td>
                             <Image
-                              src={`${API_URL}/uploads/${item.ProductImage}`}
+                              src={`${item.ProductImage}`}
                               alt={item.ProductName}
                               style={{ width: '50px', height: '50px', objectFit: 'cover' }}
                               rounded

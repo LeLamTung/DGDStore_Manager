@@ -91,7 +91,7 @@ const CategoryEdit = () => {
                             {Array.isArray(CategoryImages) && CategoryImages.map((image, index) => (
                                 <img
                                     key={index}
-                                    src={`${API_URL}/uploads/${typeof image === "string" ? image.trim() : image}`}
+                                    src={`${typeof image === "string" ? image.trim() : image}`}
                                     alt="Category"
                                     width={100}
                                     height={100}
