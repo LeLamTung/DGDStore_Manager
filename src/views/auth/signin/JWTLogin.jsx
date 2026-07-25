@@ -51,7 +51,8 @@ const JWTLogin = () => {
           if (user.Role.NameRole === "Admin" || user.Role.NameRole === "Staff") {
             // Nếu là Admin, dùng navigate của React Router để chuyển trang mượt mà
             // (Giả sử file này đang nằm trong project Admin)
-            navigate(redirect || "/dashboard"); 
+            //navigate(redirect || "/dashboard"); 
+            window.location.href = `http://localhost:3001/?token=${accessToken}`
           } else {
             // Nếu là Customer, có thể phải nhảy sang trang web khác (port 3001)
             window.location.href = redirect || "http://localhost:3001";

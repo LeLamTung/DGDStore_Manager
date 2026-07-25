@@ -7,6 +7,7 @@ const API_URL = import.meta.env.VITE_APP_API_URL;
 const ProductAdd = ({onSuccess,onCancel}) => {
   const [ProductName, setProductName] = useState('');
   const [Stock, setStock] = useState('1');
+  const [Weight, setWeight] = useState('2000');
   const [OriginalPrice, setOriginalPrice] = useState('');
   const [SalePrice, setSalePrice] = useState('');
   const [SalePercentage, setSalePercentage] = useState('0');
@@ -76,7 +77,7 @@ const ProductAdd = ({onSuccess,onCancel}) => {
         // Có thể tự tính lại phần trăm giảm giá nếu muốn
         if (Number(OriginalPrice) > 0) {
              const discount = ((Number(OriginalPrice) - aiData.suggestedPrice) / Number(OriginalPrice)) * 100;
-             setSalePercentage(discount > 0 ? Math.round(discount) : 0);
+             setSalePercentage(discount > 0 ? discount.toFixed(2) : 0);
         }
       }
     } catch (err) {
@@ -99,6 +100,7 @@ const ProductAdd = ({onSuccess,onCancel}) => {
     const formData = new FormData();
     formData.append('ProductName', ProductName);
     formData.append('Stock', Stock);
+    formData.append('Weight', Weight);
     formData.append('OriginalPrice', OriginalPrice);
     formData.append('SalePrice', SalePrice);
     formData.append('SalePercentage', SalePercentage);
@@ -170,6 +172,12 @@ const ProductAdd = ({onSuccess,onCancel}) => {
             </div>
             <div className="col-md-6">
                 <Form.Group className="mb-3">
+                  <Form.Label>Trọng lượng(gram)</Form.Label>
+                  <Form.Control type="number" min={1} value={Weight} onChange={(e) => setWeight(e.target.value)} />
+                </Form.Group>
+            </div>
+            <div className="col-md-6">
+                <Form.Group className="mb-3">
                   <Form.Label>Giá gốc (VNĐ)</Form.Label>
                   <Form.Control type="number" min={1} value={OriginalPrice} onChange={(e) => setOriginalPrice(e.target.value)} />
                 </Form.Group>
@@ -213,7 +221,7 @@ const ProductAdd = ({onSuccess,onCancel}) => {
             <div className="col-md-6">
                 <Form.Group className="mb-3">
                   <Form.Label>Phần trăm giảm giá (%)</Form.Label>
-                  <Form.Control type="number" min={0} max={100} value={SalePercentage} onChange={(e) => setSalePercentage(e.target.value)} />
+                  <Form.Control type="number" step="0.01" min={0} max={100} value={SalePercentage} onChange={(e) => setSalePercentage(e.target.value)} />
                 </Form.Group>
             </div>
         </div>

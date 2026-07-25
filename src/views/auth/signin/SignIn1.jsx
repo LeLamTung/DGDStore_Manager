@@ -58,13 +58,13 @@ const Signin1 = () => {
           navigate("/dashboard"); // Dùng navigate thay vì window.location
         } else {
           // Nếu nhảy sang trang Customer (port 3001) thì bắt buộc reload
-          window.location.href = "http://localhost:3001";
+          window.location.href = `http://localhost:3001/?token=${accessToken}`;
         }
       }
 
     } catch (error) {
       console.error("Google login error:", error);
-      alert("Đăng nhập thất bại");
+      alert("Đăng nhập thất bại: " + (error.response?.data?.message || "Lỗi hệ thống"));
     }
   };
   const handleError = () => {
@@ -102,7 +102,7 @@ const Signin1 = () => {
                   Đăng ký
                 </NavLink>
               </p>
-              <div>
+              <div style={{display:'flex', justifyContent:"center"}}>
                 <GoogleLogin
                   onSuccess={handleSucces}
                   onError={handleError}

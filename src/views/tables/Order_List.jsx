@@ -1,7 +1,8 @@
 import React, { useEffect, useState } from 'react';
-import { Table, Button, message, Card } from 'antd';
+import { Table, Button, message, Card, Tag, Space, Tooltip } from 'antd'; 
 import { useNavigate } from 'react-router-dom';
 import axiosIntance from '../../utils/axiosInstance';
+import moment from 'moment'; 
 
 const OrderList = () => {
   const [Orders, setOrders] = useState([]);
@@ -10,15 +11,18 @@ const OrderList = () => {
   const navigate = useNavigate();
   const [pagination, setPagination] = useState({
     current: 1,
-    pageSize: 5
+    pageSize: 10, // Tăng mặc định lên 10 cho dễ nhìn
   });
+
   useEffect(() => {
     const fetchOrders = async () => {
       setLoading(true);
       try {
         const res = await axiosIntance.get(`${API_URL}/api/admin/order/list`);
         if (res.data && Array.isArray(res.data.data)) {
-          setOrders(res.data.data);
+          // Sắp xếp đơn mới nhất lên đầu (nếu API chưa sort)
+          const sortedOrders = res.data.data.sort((a, b) => new Date(b.CreatedAt) - new Date(a.CreatedAt));
+          setOrders(sortedOrders);
         } else {
           throw new Error('Dữ liệu API không hợp lệ');
         }
@@ -31,42 +35,52 @@ const OrderList = () => {
     fetchOrders();
   }, []);
 
-  // Hàm hiển thị trạng thái
-  const getStatusLabel = (status) => {
+  // --- HÀM RENDER TRẠNG THÁI (Dựa theo Entity) ---
+
+  // 1. OrderStatus: 1: Pending, 2: Processing, 3: Shipping, 4: Completed, 5: Cancelled
+  const renderOrderStatus = (status) => {
+    switch (status) {
+      case 1:
+        return <Tag color="orange">Chờ xử lý</Tag>;
+      case 2:
+        return <Tag color="blue">Đang xử lý</Tag>;
+      case 3:
+        return <Tag color="cyan">Đang giao (GHN)</Tag>;
+      case 4:
+        return <Tag color="green">Hoàn thành</Tag>;
+      case 5:
+        return <Tag color="red">Đã hủy</Tag>;
+      default:
+        return <Tag>Unknown</Tag>;
+    }
+  };
+
+  // 2. PaymentStatus: 0: Unpaid, 1: Paid, 2: Refunded
+  const renderPaymentStatus = (status) => {
     switch (status) {
       case 0:
-        return <span style={{ color: 'red' }}>Đã hủy</span>;
+        return <Tag color="default" style={{ border: '1px solid #d9d9d9' }}>Chưa TT</Tag>;
       case 1:
-        return <span style={{ color: 'blue' }}>Đã thanh toán</span>;
+        return <Tag color="success">Đã TT</Tag>;
       case 2:
-        return <span style={{ color: 'orange' }}>Chưa thanh toán</span>;
-      case 3:
-        return <span style={{ color: 'green' }}>Hoàn thành</span>;
+        return <Tag color="purple">Hoàn tiền</Tag>;
       default:
-        return <span>Unknown</span>;
+        return <Tag>Unknown</Tag>;
     }
   };
 
-  // Hàm hiển thị phương thức thanh toán
-  const getPaymentMethodLabel = (PaymentMethod) => {
-    const method = parseInt(PaymentMethod, 10);
-    switch (method) {
-      case 0:
-        return <span>COD</span>;
-      case 1:
-        return <span>MoMo</span>;
-      default:
-        return <span>Unknown</span>;
-    }
+  // 3. Phương thức thanh toán
+  const renderPaymentMethod = (method) => {
+    const m = String(method); // Chuyển về string để so sánh cho chắc
+    if (m === '0') return <Tag color="magenta">COD</Tag>;
+    if (m === '1') return <Tag color="#a50064">MoMo</Tag>; // Màu đặc trưng MoMo
+    return <span>{method}</span>;
   };
 
-  // Xử lý khi nhấn nút Sửa
   const handleEdit = (id) => {
-    console.log('Navigating to edit Order with ID:', id);
     navigate(`/order/edit/${id}`);
   };
 
-  // Xử lý khi nhấn nút Xóa
   const handleDelete = async (idOrder) => {
     if (window.confirm('Bạn có chắc chắn muốn xóa đơn hàng này?')) {
       try {
@@ -78,88 +92,153 @@ const OrderList = () => {
       }
     }
   };
+
   const handleTableChange = (pagination) => {
     setPagination(pagination);
   };
 
-  // Cấu hình cột cho bảng
+  // --- CẤU HÌNH CỘT ---
   const columns = [
     {
-      title: '#',
-      dataIndex: 'index',
-      render: (_, __, index) => (pagination.current - 1) * pagination.pageSize + index + 1,
+      title: 'ID',
+      dataIndex: 'idOrder',
+      key: 'idOrder',
       width: 60,
-      align: 'center'
+      align: 'center',
+      fixed: 'left', // Cố định cột ID bên trái
     },
     {
-      title: 'Tên khách hàng',
-      dataIndex: 'CustomerName',
-      key: 'CustomerName'
+      title: 'Ngày tạo',
+      dataIndex: 'CreatedAt',
+      key: 'CreatedAt',
+      width: 110,
+      render: (date) => moment(date).format('DD/MM/YYYY HH:mm'), // Format ngày giờ
+      sorter: (a, b) => new Date(a.CreatedAt) - new Date(b.CreatedAt),
     },
     {
-      title: 'Số điện thoại',
-      dataIndex: 'PhoneNumber',
-      key: 'PhoneNumber'
+      title: 'Khách hàng',
+      key: 'customerInfo',
+      width: 200,
+      render: (_, record) => (
+        <div>
+          <div style={{ fontWeight: 'bold' }}>{record.CustomerName}</div>
+          <div style={{ fontSize: '12px', color: '#888' }}>{record.PhoneNumber}</div>
+        </div>
+      ),
+    },
+    {
+      title: 'Trạng thái đơn',
+      dataIndex: 'OrderStatus', // Map với Entity
+      key: 'OrderStatus',
+      width: 120,
+      align: 'center',
+      filters: [
+        { text: 'Chờ xử lý', value: 1 },
+        { text: 'Đang giao', value: 3 },
+        { text: 'Hoàn thành', value: 4 },
+        { text: 'Đã hủy', value: 5 },
+      ],
+      onFilter: (value, record) => record.OrderStatus === value,
+      render: renderOrderStatus,
+    },
+    {
+      title: 'Thanh toán',
+      key: 'paymentInfo',
+      width: 140,
+      render: (_, record) => (
+        <Space direction="vertical" size={0}>
+          {renderPaymentMethod(record.PaymentMethod)}
+          <div style={{ marginTop: 4 }}>{renderPaymentStatus(record.PaymentStatus)}</div>
+        </Space>
+      ),
+    },
+    {
+      title: 'Vận chuyển (GHN)',
+      key: 'ghn',
+      width: 150,
+      render: (_, record) => (
+        <div>
+           {record.GhnOrderCode ? (
+             <a 
+               href={`https://donhang.ghn.vn/?order_code=${record.GhnOrderCode}`} 
+               target="_blank" 
+               rel="noopener noreferrer"
+               style={{ fontWeight: 'bold', color: '#1677ff', textDecoration: 'underline' }}
+               title="Bấm để theo dõi đơn hàng trên GHN"
+             >
+                {record.GhnOrderCode} <span style={{fontSize: '10px'}}>↗</span>
+             </a>
+           ) : (
+             <span>-</span>
+           )}
+           
+           {/* Hiển thị phí ship */}
+           <div style={{ fontSize: '12px', color: '#555', marginTop: '4px' }}>
+              Ship: {record.ShippingFee ? record.ShippingFee.toLocaleString() : 0} đ
+           </div>
+        </div>
+      )
+    },
+    {
+      title: 'Tổng tiền',
+      dataIndex: 'TotalPrice',
+      key: 'TotalPrice',
+      width: 120,
+      align: 'right',
+      render: (price) => (
+        <span style={{ color: '#d4380d', fontWeight: 'bold' }}>
+          {price?.toLocaleString()} đ
+        </span>
+      ),
+      sorter: (a, b) => a.TotalPrice - b.TotalPrice,
     },
     {
       title: 'Địa chỉ',
       dataIndex: 'Address',
-      key: 'Address'
+      key: 'Address',
+      width: 200,
+      ellipsis: {
+        showTitle: false,
+      },
+      render: (address) => (
+        <Tooltip placement="topLeft" title={address}>
+          {address}
+        </Tooltip>
+      ),
     },
     {
-      title: 'Ghi chú',
-      dataIndex: 'Notes',
-      key: 'Notes'
-    },
-    {
-      title: 'Tổng giá',
-      dataIndex: 'TotalPrice',
-      key: 'TotalPrice',
-      render: (price) => `${price?.toLocaleString()} đ`
-    },
-    {
-      title: 'Thanh toán',
-      dataIndex: 'PaymentMethod',
-      key: 'PaymentMethod',
-      render: getPaymentMethodLabel
-    },
-    {
-      title: 'Trạng thái',
-      dataIndex: 'Status',
-      key: 'Status',
-      render: getStatusLabel
-    },
-    {
-      title: 'Actions',
+      title: 'Thao tác',
       key: 'action',
+      width: 100,
+      fixed: 'right', // Cố định bên phải
+      align: 'center',
       render: (_, record) => (
-        <>
-          <Button type="primary" onClick={() => handleEdit(record.idOrder)} style={{ marginRight: 8 }}>
+        <Space size="small">
+          <Button type="link" size="small" onClick={() => handleEdit(record.idOrder)}>
             Sửa
           </Button>
-          <Button danger onClick={() => handleDelete(record.idOrder)}>
+          {/* Chỉ cho xóa nếu đơn đã hủy hoặc mới tạo (tùy logic) */}
+          <Button type="text" danger size="small" onClick={() => handleDelete(record.idOrder)}>
             Xóa
           </Button>
-        </>
-      )
-    }
+        </Space>
+      ),
+    },
   ];
 
   return (
-    <Card title="Danh sách Đơn hàng">
+    <Card title="Quản lý Đơn hàng" bordered={false}>
       <Table
         dataSource={Orders}
         columns={columns}
         rowKey="idOrder"
         loading={loading}
+        scroll={{ x: 1300 }} // Cho phép cuộn ngang nếu bảng quá rộng
         pagination={{
           ...pagination,
           total: Orders.length,
           showSizeChanger: true,
-          showQuickJumper: true,
-          pageSizeOptions: ['5', '10', '20', '50'],
           showTotal: (total) => `Tổng ${total} đơn hàng`,
-          position: ['bottomCenter']
         }}
         onChange={handleTableChange}
       />

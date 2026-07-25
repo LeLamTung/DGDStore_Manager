@@ -185,6 +185,12 @@ const ProductList = () => {
       width: 100,
     },
     {
+      title:" Trọng lượng (gram)",
+      dataIndex: "Weight",
+      key: "Weight",
+      width: 130,
+    },
+    {
       title: "Giá gốc",
       dataIndex: "OriginalPrice",
       key: "OriginalPrice",

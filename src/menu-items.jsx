@@ -204,9 +204,9 @@ const menuItems = {
               type: 'item',
               icon: 'feather icon-log-out',
               breadcrumbs: false,
-              url: '/auth/logout',
+              // url: '/auth/logout',
               // Loại bỏ URL, thay vào đó là LogoutMenuItem
-              // component: <LogoutMenuItem />
+              component: <LogoutMenuItem />
             }
 
           ]

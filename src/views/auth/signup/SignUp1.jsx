@@ -111,13 +111,12 @@ const SignUp1 = () => {
                       onChange={(e) => setPassword1(e.target.value)}
                     />
                   </div>
-                  <div className="form-check  text-start mb-4 mt-2">
+                  {/* <div className="form-check  text-start mb-4 mt-2">
                     <input type="checkbox" className="form-check-input" id="customCheck1" defaultChecked={false} />
-                    {/* <label className="form-check-label" htmlFor="customCheck1">
+                    <label className="form-check-label" htmlFor="customCheck1">
                       Send me the <Link to="#"> Newsletter</Link> weekly.
-                    </label> */}
-                    <text>{error}</text>
-                  </div>
+                    </label>
+                  </div> */}
                   <button className="btn btn-primary mb-4" onClick={handleRegistration}>Sign up</button>
                   <p className="mb-2">
                     Already have an account?{' '}

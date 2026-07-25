@@ -5,10 +5,11 @@ import axiosIntance from '../../utils/axiosInstance';
 
 const API_URL = import.meta.env.VITE_APP_API_URL;
 
-const ProductEdit = ({productId, onSuccess, onCancel}) => {
+const ProductEdit = ({ productId, onSuccess, onCancel }) => {
   // const { id } = useParams();
   const [ProductName, setProductName] = useState('');
   const [Stock, setStock] = useState('1');
+  const [Weight, setWeight] = useState('2000');
   const [OriginalPrice, setOriginalPrice] = useState('');
   const [SalePrice, setSalePrice] = useState('');
   const [SalePercentage, setSalePercentage] = useState('');
@@ -23,21 +24,22 @@ const ProductEdit = ({productId, onSuccess, onCancel}) => {
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
   const navigate = useNavigate();
-  
+
   // --- STATE MỚI CHO AI ---
   const [loadingAI, setLoadingAI] = useState(false);
   const [aiReason, setAiReason] = useState('');
 
   useEffect(() => {
-    if(!productId) return;
+    if (!productId) return;
     const fetchProductAndCategories = async () => {
       try {
         const res = await axiosIntance.get(`${API_URL}/api/admin/product/list/${productId}`);
         // Kiểm tra an toàn dữ liệu
-        const product = res.data?.data || {}; 
-        
+        const product = res.data?.data || {};
+
         setProductName(product.ProductName || '');
         setStock(product.Stock || '0');
+        setWeight(product.Weight || '2000');
         setOriginalPrice(product.OriginalPrice || '');
         setSalePrice(product.SalePrice || '');
         setSalePercentage(product.SalePercentage || '');
@@ -46,10 +48,10 @@ const ProductEdit = ({productId, onSuccess, onCancel}) => {
         setIsHome(product.IsHome);
         setCategoryId(product.Category || '');
         setCurrentImages(product.Images || []);
-        
-        if(product.Images && product.Images.length > 0) {
-            const mainIndex = product.Images.findIndex((img) => img.MainImage);
-            setMainImageIndex(mainIndex !== -1 ? mainIndex + 1 : 1);
+
+        if (product.Images && product.Images.length > 0) {
+          const mainIndex = product.Images.findIndex((img) => img.MainImage);
+          setMainImageIndex(mainIndex !== -1 ? mainIndex + 1 : 1);
         }
 
         const catRes = await axiosIntance.get(`${API_URL}/api/admin/categories/list`);
@@ -89,22 +91,22 @@ const ProductEdit = ({productId, onSuccess, onCancel}) => {
       if (res.data && (res.data.cod === 200 || res.status === 200)) {
         // Một số backend trả data trực tiếp, một số bọc trong .data.data, hãy log ra để chắc chắn
         // console.log("AI Response:", res.data); 
-        
+
         const aiData = res.data.data || res.data; // Fallback nếu cấu trúc khác
 
         if (aiData && aiData.suggestedPrice !== undefined) {
-            // Tự động điền giá vào ô SalePrice
-            setSalePrice(aiData.suggestedPrice);
-    
-            // Hiển thị lý do
-            setAiReason(aiData.reason);
-    
-            // Tính lại phần trăm
-            const origPrice = Number(OriginalPrice);
-            if (origPrice > 0) {
-              const discount = ((origPrice - aiData.suggestedPrice) / origPrice) * 100;
-              setSalePercentage(discount > 0 ? discount.toFixed(2) : 0);
-            }
+          // Tự động điền giá vào ô SalePrice
+          setSalePrice(aiData.suggestedPrice);
+
+          // Hiển thị lý do
+          setAiReason(aiData.reason);
+
+          // Tính lại phần trăm
+          const origPrice = Number(OriginalPrice);
+          if (origPrice > 0) {
+            const discount = ((origPrice - aiData.suggestedPrice) / origPrice) * 100;
+            setSalePercentage(discount > 0 ? discount.toFixed(2) : 0);
+          }
         }
       }
     } catch (err) {
@@ -124,6 +126,7 @@ const ProductEdit = ({productId, onSuccess, onCancel}) => {
         idProduct: productId,
         ProductName,
         Stock,
+        Weight,
         OriginalPrice,
         SalePrice,
         SalePercentage,
@@ -131,15 +134,15 @@ const ProductEdit = ({productId, onSuccess, onCancel}) => {
         IsSales,
         IsHome,
         Category: categoryId,
-        mainImage: currentImages[mainImageIndex - 1]?.ImageLink 
+        mainImage: currentImages[mainImageIndex - 1]?.ImageLink
       };
-      
+
       const res = await axiosIntance.put(`${API_URL}/api/admin/product/edit/${productId}`, formData);
 
       if (res.data.message || res.status === 200) {
         setSuccess('Cập nhật sản phẩm thành công!');
         // setTimeout(() => navigate('/product/list'), 1000);
-        if(onSuccess) onSuccess();
+        if (onSuccess) onSuccess();
       } else {
         setError('Cập nhật thất bại.');
       }
@@ -154,13 +157,13 @@ const ProductEdit = ({productId, onSuccess, onCancel}) => {
       {/* <h2>Cập nhật sản phẩm</h2> */}
       {error && <Alert variant="danger">{error}</Alert>}
       {/* {success && <Alert variant="success">{success}</Alert>} */}
-      
+
       <Form onSubmit={handleSubmit}>
         <Form.Group className="mb-3">
           <Form.Label>Tên sản phẩm</Form.Label>
           <Form.Control type="text" value={ProductName} onChange={(e) => setProductName(e.target.value)} />
         </Form.Group>
-        
+
         <Form.Group className="mb-3">
           <Form.Label>Danh mục sản phẩm</Form.Label>
           <Form.Select value={categoryId} onChange={(e) => setCategoryId(e.target.value)}>
@@ -187,11 +190,17 @@ const ProductEdit = ({productId, onSuccess, onCancel}) => {
           </div>
           <div className="col-md-6">
             <Form.Group className="mb-3">
+              <Form.Label>Trọng lượng(gram)</Form.Label>
+              <Form.Control type="number" min={1} value={Weight} onChange={(e) => setWeight(e.target.value)} />
+            </Form.Group>
+          </div>
+        </div>
+        <div className="col-md-6">
+            <Form.Group className="mb-3">
               <Form.Label>Giá gốc (VNĐ)</Form.Label>
               <Form.Control type="number" min={1} value={OriginalPrice} onChange={(e) => setOriginalPrice(e.target.value)} />
             </Form.Group>
           </div>
-        </div>
 
         {/* --- PHẦN NÚT BẤM AI (ĐÃ SỬA IMPORT SPINNER) --- */}
         <div className="mb-3 p-3 bg-light rounded border">
